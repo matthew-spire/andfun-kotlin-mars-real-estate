@@ -23,8 +23,10 @@ import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.example.android.marsrealestate.R
 import com.example.android.marsrealestate.databinding.FragmentOverviewBinding
+import com.example.android.marsrealestate.network.MarsApiFilter
 
 /**
  * This fragment shows the the status of the Mars real-estate web services transaction.
@@ -52,6 +54,19 @@ class OverviewFragment : Fragment() {
         // Giving the binding access to the OverviewViewModel
         binding.viewModel = viewModel
 
+        // Set binding.photosGrid.adapter to a new PhotoGridAdapter()
+        binding.photosGrid.adapter = PhotoGridAdapter(PhotoGridAdapter.OnClickListener {
+            viewModel.displayPropertyDetails(it)
+        })
+
+        // Observe navigateToSelectedProperty, Navigate when MarsProperty !null, then call displayPropertyDetailsComplete
+        viewModel.navigateToSelectedProperty.observe(viewLifecycleOwner) {
+            if (null != it) {
+                this.findNavController().navigate(OverviewFragmentDirections.actionShowDetail(it))
+                viewModel.displayPropertyDetailsComplete()
+            }
+        }
+
         setupMenu()
 
         return binding.root
@@ -64,9 +79,15 @@ class OverviewFragment : Fragment() {
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-                TODO("Not yet implemented")
+                viewModel.updateFilter(
+                    when (menuItem.itemId) {
+                        R.id.show_rent_menu -> MarsApiFilter.SHOW_RENT
+                        R.id.show_buy_menu -> MarsApiFilter.SHOW_BUY
+                        else -> MarsApiFilter.SHOW_ALL
+                    }
+                )
+                return true
             }
-
         })
     }
 }
